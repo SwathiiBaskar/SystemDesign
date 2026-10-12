@@ -1,0 +1,16 @@
+
+services:
+  mongo-node1:
+    image: mongo:6.0
+    ports:
+      - "27018:27017"
+
+  mongo-node2:
+    image: mongo:6.0
+    ports:
+      - "27019:27017"
+
+  mongo-node3:
+    image: mongo:6.0
+    ports:
+      - "27020:27017"

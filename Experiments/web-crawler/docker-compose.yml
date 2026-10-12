@@ -1,0 +1,10 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  crawler:
+    build: .
+    ports: ["8080:8080"]
+    environment:
+      REDIS_HOST: redis
+    depends_on: [redis]

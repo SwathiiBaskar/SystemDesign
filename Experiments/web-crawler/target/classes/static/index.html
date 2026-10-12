@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crawlspace – web content discovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eceff4;--ink:#111a2e;--nav:#111a2e;--nav2:#1b2842;--line:#d6dce6;--mut:#66708a;--acc:#2f5bff;--hit:#f5a524;--ok:#12a36b;--bad:#d64545;--card:#fff}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:14px/1.45 "Bricolage Grotesque",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+header{background:var(--nav);color:#e8edf8;padding:14px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+h1{font-size:20px;font-weight:800;margin:0;letter-spacing:-.02em}
+h1 small{display:block;font-size:11px;font-weight:500;color:#8fa0c4;letter-spacing:0}
+form{display:flex;gap:8px;flex:1;min-width:280px;flex-wrap:wrap}
+input,select,button{font:inherit;border-radius:8px;border:1px solid #2d3d61;background:var(--nav2);color:#fff;padding:9px 12px}
+input#seed{flex:1;min-width:220px}input[type=number]{width:74px}
+button.go{background:var(--acc);border-color:var(--acc);font-weight:700;cursor:pointer}
+button.go:hover{filter:brightness(1.1)}button:focus-visible,input:focus-visible,.card:focus-visible{outline:2px solid var(--hit);outline-offset:2px}
+label.chk{display:flex;align-items:center;gap:6px;color:#b6c2dd;font-size:13px}
+.stats{display:flex;gap:22px;padding:10px 20px;background:#fff;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+.stat b{font-size:20px;font-weight:800;display:block;line-height:1}.stat span{font-size:12px;color:var(--mut)}
+.stat.hit b{color:var(--hit)}.bar{flex:1;min-width:140px;height:8px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:#e4e9f5;color:var(--acc)}
+.pill.done{background:#dcf3e9;color:var(--ok)}
+main{flex:1;display:grid;grid-template-columns:minmax(300px,380px) 1fr;min-height:0}
+#feed{overflow:auto;padding:14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:0;display:flex;cursor:pointer;overflow:hidden;text-align:left}
+.card:hover{border-color:var(--acc)}.card.sel{border-color:var(--acc);box-shadow:0 0 0 2px #2f5bff33}
+.card .th{width:84px;flex:none;background:#dfe5f0 center/cover no-repeat;display:grid;place-items:center;color:var(--mut);font-weight:800;font-size:22px}
+.card .bd{padding:10px 12px;min-width:0}
+.card h3{margin:0 0 2px;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .u{font-size:11.5px;color:var(--ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card p{margin:4px 0 6px;font-size:12.5px;color:#39445f;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{font-size:11px;color:var(--mut);display:flex;gap:10px}.meta .f{color:var(--bad)}
+#reader{display:flex;flex-direction:column;min-width:0;min-height:0;padding:14px}
+.win{flex:1;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:0}
+.chrome{display:flex;gap:10px;align-items:center;padding:10px 12px;background:#f4f6fa;border-bottom:1px solid var(--line)}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#cfd6e4;margin-right:4px}
+.addr{flex:1;background:#fff;border:1px solid var(--line);border-radius:99px;padding:5px 14px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#39445f}
+.tabs{display:flex;gap:2px;padding:0 12px;border-bottom:1px solid var(--line);background:#fff}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:10px 12px;border-radius:0;cursor:pointer;font-weight:600}
+.tabs button.on{color:var(--acc);border-color:var(--acc)}
+.pane{flex:1;overflow:auto;min-height:0}
+iframe{width:100%;height:100%;border:0;background:#fff;display:block}
+.txt{padding:24px 32px;font:17px/1.7 "Source Serif 4",Georgia,serif;max-width:74ch}
+.txt h2{font:800 24px "Bricolage Grotesque";margin:0 0 4px}.txt .ds{color:var(--mut);font-style:italic}
+.list{padding:8px 16px}.list a{display:block;padding:7px 0;border-bottom:1px solid #eef0f5;color:var(--acc);text-decoration:none;font-size:13px;word-break:break-all;cursor:pointer}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:16px}.imgs img{width:100%;height:130px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.empty{margin:auto;text-align:center;color:var(--mut);max-width:34ch;padding:40px}.empty b{display:block;color:var(--ink);font-size:18px;margin-bottom:6px}
+#err{color:#ffb3b3;font-size:13px;width:100%}
+@media(max-width:820px){main{grid-template-columns:1fr;overflow:auto}#feed{max-height:42vh;border-right:0;border-bottom:1px solid var(--line)}#reader{min-height:70vh}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<header>
+  <h1>Crawlspace<small>Discover pages, read what was found</small></h1>
+  <form id="f">
+    <input id="seed" value="https://quotes.toscrape.com" aria-label="Seed URL" required>
+    <select id="preset" aria-label="Seed presets"><option value="">Sample seeds</option></select>
+    <input id="max" type="number" value="12" min="1" max="200" title="Max pages" aria-label="Max pages">
+    <input id="depth" type="number" value="1" min="0" max="4" title="Max depth" aria-label="Max depth">
+    <label class="chk"><input id="same" type="checkbox" checked> Same domain</label>
+    <button class="go">Start crawl</button><div id="err"></div>
+  </form>
+</header>
+<section class="stats">
+  <span id="st" class="pill">Idle</span>
+  <div class="stat"><b id="sv">0</b><span>pages crawled</span></div>
+  <div class="stat"><b id="sd">0</b><span>URLs discovered</span></div>
+  <div class="stat hit"><b id="sc">0</b><span>served from Redis cache</span></div>
+  <div class="stat"><b id="sf">0</b><span>failed</span></div>
+  <div class="bar" aria-hidden="true"><i id="pb"></i></div>
+</section>
+<main>
+  <div id="feed"><div class="empty"><b>Nothing crawled yet</b>Enter a seed URL and start a crawl. Pages appear here as they are fetched.</div></div>
+  <section id="reader"><div class="win"><div class="empty"><b>Reader</b>Select a crawled page to see its content as the crawler stored it.</div></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);let job=null,pages=[],from=0,timer=null,sel=null,tab='page';
+const dom=u=>{try{return new URL(u).hostname}catch{return u}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+fetch('/seeds.json').then(r=>r.json()).then(d=>d.seeds.forEach(s=>{const o=new Option(s.name,s.url);o.dataset.m=s.maxPages;o.dataset.d=s.maxDepth;$('preset').add(o)})).catch(()=>{});
+$('preset').onchange=e=>{const o=e.target.selectedOptions[0];if(!o.value)return;$('seed').value=o.value;$('max').value=o.dataset.m;$('depth').value=o.dataset.d};
+$('f').onsubmit=async e=>{e.preventDefault();$('err').textContent='';clearInterval(timer);
+ const res=await fetch('/api/crawl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed:$('seed').value,maxPages:+$('max').value,maxDepth:+$('depth').value,sameDomain:$('same').checked,delayMs:150})});
+ const j=await res.json();if(!res.ok){$('err').textContent=j.error||'Request failed';return}
+ job=j.jobId;pages=[];from=0;sel=null;$('feed').innerHTML='';readerEmpty();timer=setInterval(poll,800);poll()};
+async function poll(){const j=await (await fetch('/api/crawl/'+job)).json();
+ const np=await (await fetch(`/api/crawl/${job}/pages?from=${from}`)).json();
+ np.forEach(p=>{pages.push(p);addCard(p,pages.length-1)});from=pages.length;
+ $('sv').textContent=j.visited;$('sd').textContent=j.discovered;$('sc').textContent=j.cacheHits;$('sf').textContent=j.failed;
+ $('pb').style.width=Math.min(100,100*j.visited/Math.min(+j.max,Math.max(+j.discovered,1)))+'%';
+ const d=j.status==='DONE';$('st').textContent=d?'Finished':'Crawling…';$('st').className='pill'+(d?' done':'');
+ if(d){clearInterval(timer);$('pb').style.width='100%'}}
+function addCard(p,i){const b=document.createElement('button');b.className='card';b.type='button';
+ const img=(p.images||[])[0];
+ b.innerHTML=`<div class="th" ${img?`style="background-image:url('${esc(img)}')"`:''}>${img?'':esc(dom(p.url)[0]?.toUpperCase())}</div>
+ <div class="bd"><h3>${esc(p.title)}</h3><div class="u">${esc(p.url)}</div><p>${esc(p.description||p.text||p.error||'')}</p>
+ <div class="meta"><span>${p.linkCount??0} links</span><span>${p.timeMs??0} ms</span>${p.status==='FAILED'?'<span class="f">failed</span>':''}</div></div>`;
+ b.onclick=()=>{document.querySelectorAll('.card.sel').forEach(c=>c.classList.remove('sel'));b.classList.add('sel');open(p.url)};
+ $('feed').appendChild(b);if(i===0)b.click()}
+function readerEmpty(){$('reader').innerHTML='<div class="win"><div class="empty"><b>Waiting for first page</b>The first fetched page opens here automatically.</div></div>'}
+async function open(url){sel=url;const r=await fetch('/api/page?url='+encodeURIComponent(url));
+ if(!r.ok){$('reader').innerHTML='<div class="win"><div class="empty"><b>Page not available</b>It failed to download or expired from the cache.</div></div>';return}
+ render(await r.json())}
+function render(p){
+ $('reader').innerHTML=`<div class="win"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span><div class="addr">${esc(p.url)}</div></div>
+ <div class="tabs">${[['page','Rendered page'],['text','Extracted text'],['links','Links ('+p.links.length+')'],['imgs','Images ('+p.images.length+')']].map(t=>`<button class="${tab===t[0]?'on':''}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>
+ <div class="pane" id="pane"></div></div>`;
+ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render(p)});
+ const pane=$('pane');
+ if(tab==='page'){const f=document.createElement('iframe');f.setAttribute('sandbox','');f.title='Crawled page';
+  f.srcdoc=`<base target="_blank"><style>body{font:16px/1.6 Georgia,serif;margin:24px 32px;max-width:900px;color:#222}img{max-width:100%;height:auto}a{color:#2f5bff}table{border-collapse:collapse}td,th{border:1px solid #ddd;padding:4px 8px}</style>`+(p.html||`<p>${esc(p.error||'No content')}</p>`);pane.appendChild(f)}
+ else if(tab==='text')pane.innerHTML=`<div class="txt"><h2>${esc(p.title)}</h2><p class="ds">${esc(p.description)}</p><p>${esc(p.text)}</p></div>`;
+ else if(tab==='links')pane.innerHTML='<div class="list">'+p.links.map(l=>`<a data-u="${esc(l)}">${esc(l)}</a>`).join('')+'</div>';
+ else pane.innerHTML='<div class="imgs">'+p.images.map(i=>`<img loading="lazy" src="${esc(i)}" alt="">`).join('')+'</div>';
+ pane.querySelectorAll('.list a').forEach(a=>a.onclick=()=>{const i=pages.findIndex(x=>x.url===a.dataset.u);if(i>=0){tab='page';document.querySelectorAll('.card')[i].click()}})}
+</script></body></html>

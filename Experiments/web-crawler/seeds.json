@@ -1,0 +1,7 @@
+{ "seeds": [
+  { "name": "Example Domain",   "url": "https://example.com",              "maxPages": 5,  "maxDepth": 1 },
+  { "name": "Quotes to Scrape", "url": "https://quotes.toscrape.com",      "maxPages": 15, "maxDepth": 1 },
+  { "name": "Books to Scrape",  "url": "https://books.toscrape.com",       "maxPages": 20, "maxDepth": 1 },
+  { "name": "Scraping Sandbox", "url": "https://toscrape.com",             "maxPages": 5,  "maxDepth": 1 },
+  { "name": "Wikipedia stub",   "url": "https://en.wikipedia.org/wiki/Web_crawler", "maxPages": 10, "maxDepth": 1, "sameDomain": true }
+] }
